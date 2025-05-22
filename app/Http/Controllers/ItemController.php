@@ -59,4 +59,55 @@ class ItemController extends Controller
             'tagString' => $tagString,
         ];
     }
+
+    public function edit($id)
+    {
+        $task = Task::with('tags')->find($id);
+
+        if (!$task) {
+            return redirect()->route('dashboard')->with('error', 'Task tidak ditemukan.');
+        }
+
+        $tagString = $task->tags->pluck('tag_name')->implode(', ');
+        $item = $task->name . ' | ' . $tagString;
+
+        return view('edit', [
+            'task' => $task,
+            'item' => $item, // Gabungan task + tag
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'item' => 'required|string',
+        ]);
+
+        $task = Task::find($id);
+
+        if (!$task) {
+            return redirect()->route('dashboard')->with('error', 'Task tidak ditemukan.');
+        }
+
+        $mapping = $this->_mapping($request->input('item'));
+
+        $task->name = $mapping['taskName'];
+        $task->save();
+
+        // Hapus tag lama
+        $task->tags()->delete();
+
+        // Tambah tag baru
+        $tagNames = explode(',', $mapping['tagString']);
+        foreach ($tagNames as $tagName) {
+            $tagName = trim($tagName);
+            if (!empty($tagName)) {
+                $task->tags()->create([
+                    'tag_name' => $tagName,
+                ]);
+            }
+        }
+
+        return redirect()->route('dashboard')->with('success', 'Task berhasil diperbarui.');
+    }
 }
