@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreItemRequest;
 use App\Models\Tag;
 use App\Models\Task;
@@ -32,15 +31,20 @@ class ItemController extends Controller
             }
         }
 
-        return to_route('dashboard');
+        return redirect()->route('dashboard')->with('success', 'Task berhasil ditambahkan.');
     }
 
     public function delete($id)
     {
-        $to_delete = Task::where('id', $id)->firstOrFail();
-        $to_delete->delete();
+        $task = Task::find($id);
 
-        return to_route('dashboard');
+        if (!$task) {
+            return redirect()->route('dashboard')->with('error', 'Task tidak ditemukan.');
+        }
+
+        $task->delete();
+
+        return redirect()->route('dashboard')->with('success', 'Task berhasil dihapus.');
     }
 
     // Private function

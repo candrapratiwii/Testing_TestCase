@@ -1,7 +1,7 @@
 <?php
 
 namespace Tests\Feature;
-
+use App\Models\Task;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
@@ -59,24 +59,28 @@ class FeatureTodoTest extends TestCase
     }
 
 
+    use RefreshDatabase; // agar DB dibersihkan setiap test
+
     public function testDeleteDataActivity()
     {
-        // 1. Cek url yang diakses
-        $response = $this->get(route('dashboard'));
-        $response->assertStatus(Response::HTTP_OK);
-        $response->assertSee('Enter an activity');
-
-        // 2. User mengirim data ke server
-
-        $storeData = $this->delete(route('item.destroy', ['id' => 3]));
-
-        // 3. Apakah data berhasil dihapus
-        $storeData->assertStatus(Response::HTTP_FOUND);
-        $this->assertDatabaseMissing('tasks', [
-            'id' => 3,
+        // 1. Insert data terlebih dahulu (bukan hardcode id = 3)
+        $task = Task::create([
+            'name' => 'Task to Delete',
+            'is_done' => false,
         ]);
 
-        // 4. Redirect ke halaman dashboard
-        $storeData->assertRedirect(route('dashboard'));
+        // 2. Lakukan delete berdasarkan ID task yang baru dibuat
+        $response = $this->delete(route('item.destroy', ['id' => $task->id]));
+
+        // 3. Cek apakah berhasil redirect dan data sudah hilang
+        $response->assertStatus(Response::HTTP_FOUND);
+        $this->assertDatabaseMissing('tasks', [
+            'id' => $task->id,
+        ]);
+
+        // 4. Pastikan redirect ke dashboard
+        $response->assertRedirect(route('dashboard'));
     }
+        
+
 }
